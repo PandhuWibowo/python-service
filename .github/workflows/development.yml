@@ -7,15 +7,15 @@ on:
 
 jobs:
   build-and-push:
-    name: Build and push to ACR
+    name: Build and push to ACR and update deployment repo
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout the code
-      - name: Checkout code
+      # Step 1: Checkout the code of the main app repository
+      - name: Checkout the main app repository
         uses: actions/checkout@v3
 
-      # Step 2: Log in to Azure Container Registry
+      # Step 2: Log in to Azure Container Registry (ACR)
       - name: Log in to ACR
         uses: azure/docker-login@v1
         with:
@@ -23,8 +23,50 @@ jobs:
           username: ${{ secrets.ACR_USERNAME }}
           password: ${{ secrets.ACR_PASSWORD }}
 
-      # Step 3: Build and push Docker image
+      # Step 3: Build and push Docker image to ACR
       - name: Build and push Docker image
         run: |
           docker build -t ${{ secrets.ACR_LOGIN_SERVER }}/analytics-service:latest .
           docker push ${{ secrets.ACR_LOGIN_SERVER }}/analytics-service:latest
+
+      # Step 4: Checkout the Deployment Repository (apps-manifest)
+      - name: Checkout the apps-manifest repository
+        uses: actions/checkout@v2
+        with:
+          repository: PandhuWibowo/apps-manifest
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: main
+
+      # Step 5: Create a new branch for updating values-dev.yaml
+      - name: Create a new branch for values-dev.yaml update
+        run: |
+          git checkout -b update-image-tag-${{ github.sha }}
+
+      # Step 6: Update Docker image tag in values-dev.yaml
+      - name: Update Docker image tag in values-dev.yaml
+        run: |
+          sed -i 's|image.tag: .*|image.tag: "${{ secrets.ACR_LOGIN_SERVER }}/analytics-service:latest"|g' values-dev.yaml
+
+      # Step 7: Commit changes to the new branch
+      - name: Commit changes to the new branch
+        run: |
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "GitHub Actions"
+          git add values-dev.yaml
+          git commit -m "Update Docker image tag to ${{ secrets.ACR_LOGIN_SERVER }}/analytics-service:latest"
+
+      # Step 8: Push the changes to the new branch
+      - name: Push changes to the new branch
+        run: |
+          git push origin update-image-tag-${{ github.sha }}
+
+      # Step 9: Create a Pull Request to merge the changes into the main branch of the deployment repo
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v3
+        with:
+          title: "Update Docker image tag to ${{ secrets.ACR_LOGIN_SERVER }}/analytics-service:latest"
+          body: |
+            This PR updates the Docker image tag in `values-dev.yaml` for the development environment.
+          head: update-image-tag-${{ github.sha }}
+          base: main
+          token: ${{ secrets.GITHUB_TOKEN }}
