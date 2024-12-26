@@ -83,22 +83,3 @@ jobs:
           targetBranch: main
           workDir: apps-manifest  # Ensures we're working within the apps-manifest repo
           token: ${{ secrets.PAT_TOKEN }}
-          
-      - name: List files in the repository
-        run: |
-          ls -R ./apps-manifest
-
-      - name: Check git status
-        run: |
-          git status
-          git diff
-
-      - name: Commit changes to apps-manifest
-        run: |
-          cd apps-manifest  # Navigate to the checked-out directory
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "actions@github.com"
-          git add .
-          git commit -m "chore: update hello-service image tag to latest"
-          git push origin main
-
