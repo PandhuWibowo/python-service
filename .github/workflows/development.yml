@@ -73,7 +73,7 @@ jobs:
       - name: Update Image Version in Helm Chart (values-dev.yaml)
         uses: fjogeleit/yaml-update-action@v0.16.0
         with:
-          valueFile: ./hello-service/values-dev.yaml
+          valueFile: ./apps-manifest/hello-service/values-dev.yaml
           propertyPath: "image.tag"
           value: "latest"  # Set the image tag to 'latest'
           repository: PandhuWibowo/apps-manifest
