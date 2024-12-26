@@ -62,13 +62,7 @@ jobs:
           path: apps-manifest
           fetch-depth: 1
 
-      # Set up Azure CLI
-      - name: Set up Azure CLI
-        uses: azure/setup-azure-cli@v1
-        with:
-          azcliversion: '2.x'
-
-      # Log in to Azure
+      # Log in to Azure (skip Azure CLI setup step as it's pre-installed)
       - name: Azure Login
         uses: azure/login@v1
         with:
