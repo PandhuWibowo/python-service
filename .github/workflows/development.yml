@@ -83,3 +83,7 @@ jobs:
           targetBranch: main
           workDir: apps-manifest  # Ensures we're working within the apps-manifest repo
           token: ${{ secrets.PAT_TOKEN }}
+          
+      - name: List files in the repository
+        run: |
+          ls -R ./apps-manifest
