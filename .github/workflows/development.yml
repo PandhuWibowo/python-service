@@ -91,7 +91,7 @@ jobs:
       # Helm Deployment to AKS
       - name: Helm Deployment
         run: |
-          helm upgrade --install analytics-service ./analytics-service \
+          helm upgrade --install analytics-service ./apps-manifest/analytics-service \
             --namespace analytics \
-            --values ./analytics-service/values-dev.yaml  # Correct path to values-dev.yaml
+            --values ./apps-manifest/analytics-service/values-dev.yaml  # Correct path to values-dev.yaml
 
