@@ -27,14 +27,14 @@ jobs:
 
       - name: Build and Push Docker Image
         run: |
-          docker build -t ${{ secrets.ACR_LOGIN_SERVER }}/analytics-service:${{ github.sha }} .
-          docker push ${{ secrets.ACR_LOGIN_SERVER }}/analytics-service:${{ github.sha }}
+          docker build -t ${{ secrets.ACR_LOGIN_SERVER }}/hello-service:${{ github.sha }} .
+          docker push ${{ secrets.ACR_LOGIN_SERVER }}/hello-service:${{ github.sha }}
 
       - name: Tag Image with Git Tag
         run: |
           GIT_TAG=$([ -z '${{ github.ref_name }}' ] && git describe --tags --abbrev=0 || echo '${{ github.ref_name }}')
-          docker tag ${{ secrets.ACR_LOGIN_SERVER }}/analytics-service:${{ github.sha }} ${{ secrets.ACR_LOGIN_SERVER }}/analytics-service:${GIT_TAG}
-          docker push ${{ secrets.ACR_LOGIN_SERVER }}/analytics-service:${GIT_TAG}
+          docker tag ${{ secrets.ACR_LOGIN_SERVER }}/hello-service:${{ github.sha }} ${{ secrets.ACR_LOGIN_SERVER }}/hello-service:${GIT_TAG}
+          docker push ${{ secrets.ACR_LOGIN_SERVER }}/hello-service:${GIT_TAG}
 
   # Step 2: Update Helm Chart and Deploy
   update-deployment-dev:
@@ -78,7 +78,7 @@ jobs:
       - name: Update Image Version in Helm Chart (values-dev.yaml)
         uses: fjogeleit/yaml-update-action@v0.16.0
         with:
-          valueFile: ./analytics-service/values-dev.yaml
+          valueFile: ./hello-service/values-dev.yaml
           propertyPath: "image.tag"
           value: ${{ env.GIT_TAG }}
           repository: PandhuWibowo/apps-manifest
@@ -91,7 +91,7 @@ jobs:
       # Helm Deployment to AKS
       - name: Helm Deployment
         run: |
-          helm upgrade --install analytics-service ./apps-manifest/analytics-service \
+          helm upgrade --install hello-service ./apps-manifest/hello-service \
             --namespace analytics \
-            --values ./apps-manifest/analytics-service/values-dev.yaml  # Correct path to values-dev.yaml
+            --values ./apps-manifest/hello-service/values-dev.yaml  # Correct path to values-dev.yaml
 
