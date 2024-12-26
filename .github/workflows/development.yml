@@ -55,7 +55,7 @@ jobs:
       - uses: actions/checkout@v2
         with:
           repository: PandhuWibowo/apps-manifest
-          path: apps-manifest
+          path: apps-manifest  # This will clone the apps-manifest repo into the apps-manifest folder
           fetch-depth: 1
 
       # Set up Azure CLI (Alternative Method)
@@ -78,20 +78,20 @@ jobs:
       - name: Update Image Version in Helm Chart (values-dev.yaml)
         uses: fjogeleit/yaml-update-action@v0.16.0
         with:
-          valueFile: analytics-service/values-dev.yaml  # Correct path since no apps-manifest folder
+          valueFile: apps-manifest/analytics-service/values-dev.yaml  # Correct path to values-dev.yaml in apps-manifest
           propertyPath: "image.tag"
           value: ${{ env.GIT_TAG }}
-          repository: PandhuWibowo/apps-manifest  # Correct repository
+          repository: PandhuWibowo/apps-manifest
           message: "chore(deploy): [Dev] Update analytics-service image version to (${{ env.GIT_TAG }})"
           createPR: false
           branch: main
           targetBranch: main
-          workDir: .  # No subfolder, so use the root directory
+          workDir: apps-manifest  # Ensures we're working within the apps-manifest repo
           token: ${{ secrets.PAT_TOKEN }}
 
       # Helm Deployment to AKS
       - name: Helm Deployment
         run: |
-          helm upgrade --install analytics-service ./analytics-service \
+          helm upgrade --install analytics-service ./apps-manifest/analytics-service \
             --namespace analytics \
-            --values ./analytics-service/values-dev.yaml  # Correct path
+            --values ./apps-manifest/analytics-service/values-dev.yaml  # Correct path to values-dev.yaml
