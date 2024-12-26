@@ -1,19 +1,24 @@
-name: Deployment to Development Stage
+name: CI Pipeline
 
 on:
   push:
     branches:
       - main
+  pull_request:
+
+env:
+  DOCKER_CONFIG: ${{ runner.temp }}/docker_login
 
 jobs:
-  build-and-push:
-    name: Build and push to ACR and update deployment repo
+  # Step 1: Build and Push Docker Image
+  tag_and_push_image:
+    name: Build and Push Docker Image
     runs-on: ubuntu-latest
-
     steps:
-      # Step 1: Checkout the code of the main app repository
-      - name: Checkout the main app repository
-        uses: actions/checkout@v3
+      - name: Checkout Code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
 
       # Step 2: Log in to Azure Container Registry (ACR)
       - name: Log in to ACR
@@ -23,51 +28,60 @@ jobs:
           username: ${{ secrets.ACR_USERNAME }}
           password: ${{ secrets.ACR_PASSWORD }}
 
-      # Step 3: Build and push Docker image to ACR
-      - name: Build and push Docker image
+      # Step 3: Build and Push Docker Image
+      - name: Build and Push Docker Image
         run: |
-          docker build -t ${{ secrets.ACR_LOGIN_SERVER }}/analytics-service:latest .
-          docker push ${{ secrets.ACR_LOGIN_SERVER }}/analytics-service:latest
+          docker build -t ${{ secrets.ACR_LOGIN_SERVER }}/analytics-service:${{ github.sha }} .
+          docker push ${{ secrets.ACR_LOGIN_SERVER }}/analytics-service:${{ github.sha }}
 
-      # Step 4: Checkout the Deployment Repository (apps-manifest)
-      - name: Checkout the apps-manifest repository
+      # Step 4: Tag Image with Git Tag
+      - name: Tag Image with Git Tag
+        run: |
+          GIT_TAG=$([ -z '${{ github.ref_name }}' ] && git describe --tags --abbrev=0 || echo '${{ github.ref_name }}')
+          docker tag ${{ secrets.ACR_LOGIN_SERVER }}/analytics-service:${{ github.sha }} ${{ secrets.ACR_LOGIN_SERVER }}/analytics-service:${GIT_TAG}
+          docker push ${{ secrets.ACR_LOGIN_SERVER }}/analytics-service:${GIT_TAG}
+
+  # Step 2: Update Helm Chart and Deploy
+  update-deployment-dev:
+    needs: [tag_and_push_image]
+    name: Deploy Image (Dev) - Helm Update (apps-manifest)
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout Main Repository
+      - name: Checkout selected ref
         uses: actions/checkout@v2
         with:
-          repository: PandhuWibowo/apps-manifest
-          token: ${{ secrets.GITHUB_TOKEN }}
-          ref: main
+          fetch-depth: 0
 
-      # Step 5: Create a new branch for updating values-dev.yaml
-      - name: Create a new branch for values-dev.yaml update
+      # Extract the Git Tag
+      - name: Pull this build tag
         run: |
-          git checkout -b update-image-tag-${{ github.sha }}
+          echo "GIT_TAG=$([ -z '${{ env.GITHUB_REF_NAME }}' ] && git describe --tags --abbrev=0 || echo '${{ env.GITHUB_REF_NAME }}' )" >> $GITHUB_ENV
 
-      # Step 7: Update Docker image tag in values-dev.yaml
-      - name: Update Docker image tag in values-dev.yaml
-        run: |
-          sed -i 's|image.tag: .*|image.tag: "${{ secrets.ACR_LOGIN_SERVER }}/analytics-service:latest"|g' analytics-service/values-dev.yaml
-
-
-      # Step 7: Commit changes to the new branch
-      - name: Commit changes to the new branch
-        run: |
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git config --global user.name "GitHub Actions"
-          git add analytics-service/values-dev.yaml
-          git commit -m "Update Docker image tag to ${{ secrets.ACR_LOGIN_SERVER }}/analytics-service:latest"
-
-      # Step 8: Push the changes to the new branch
-      - name: Push changes to the new branch
-        run: |
-          git push origin update-image-tag-${{ github.sha }}
-
-      # Step 9: Create a Pull Request to merge the changes into the main branch of the deployment repo
-      - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v3
+      # Checkout apps-manifest Repository (No Token Required)
+      - uses: actions/checkout@v2
         with:
-          title: "Update Docker image tag to ${{ secrets.ACR_LOGIN_SERVER }}/analytics-service:latest"
-          body: |
-            This PR updates the Docker image tag in `values-dev.yaml` for the development environment.
-          head: update-image-tag-${{ github.sha }}
-          base: main
-          token: ${{ secrets.GITHUB_TOKEN }}
+          repository: PandhuWibowo/apps-manifest
+          path: apps-manifest
+          fetch-depth: 1
+
+      # Update Helm Chart with New Image Tag
+      - name: Update Image Version in Helm Chart (values-dev.yaml)
+        uses: fjogeleit/yaml-update-action@v0.7.0
+        with:
+          valueFile: analytics-service/values-dev.yaml
+          propertyPath: "image.tag"
+          value: ${{ env.GIT_TAG }}
+          repository: PandhuWibowo/apps-manifest
+          message: "chore(deploy): [Dev] Update analytics-service image version to (${{ env.GIT_TAG }})"
+          createPR: false
+          branch: main
+          targetBranch: main
+          workDir: apps-manifest
+
+      # Optional: Trigger Helm Deployment
+      - name: Helm Deployment
+        run: |
+          helm upgrade --install analytics-service ./analytics-service \
+            --namespace dev \
+            --values analytics-service/values-dev.yaml
