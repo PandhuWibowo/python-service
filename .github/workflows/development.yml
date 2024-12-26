@@ -62,7 +62,24 @@ jobs:
           path: apps-manifest
           fetch-depth: 1
 
-      # Update Helm Chart with New Image Tag
+      # Set up Azure CLI
+      - name: Set up Azure CLI
+        uses: azure/setup-azure-cli@v1
+        with:
+          azcliversion: '2.x'
+
+      # Log in to Azure
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      # Get AKS Credentials
+      - name: Get AKS Credentials
+        run: |
+          az aks get-credentials --resource-group operationtools-general --name operationtools-general-aks
+
+      # Update Image Version in Helm Chart (values-dev.yaml)
       - name: Update Image Version in Helm Chart (values-dev.yaml)
         uses: fjogeleit/yaml-update-action@v0.16.0
         with:
@@ -75,9 +92,9 @@ jobs:
           branch: main
           targetBranch: main
           workDir: apps-manifest
-          token: ${{ secrets.PAT_TOKEN }}  # Use PAT for authentication
+          token: ${{ secrets.PAT_TOKEN }}
 
-      # Optional: Trigger Helm Deployment
+      # Helm Deployment to AKS
       - name: Helm Deployment
         run: |
           helm upgrade --install analytics-service ./analytics-service \
