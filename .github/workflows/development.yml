@@ -32,7 +32,7 @@ jobs:
 
       - name: Tag Image with Git Tag
         run: |
-          GIT_TAG=$(git describe --tags --abbrev=0)
+          GIT_TAG=$([ -z '${{ github.ref_name }}' ] && git describe --tags --abbrev=0 || git tag -l "${{ github.ref_name }}" | head -n 1) echo "GIT_TAG=${GIT_TAG}" >> $GITHUB_ENV
           docker tag ${{ secrets.ACR_LOGIN_SERVER }}/hello-service:${{ github.sha }} ${{ secrets.ACR_LOGIN_SERVER }}/hello-service:${GIT_TAG}
           docker push ${{ secrets.ACR_LOGIN_SERVER }}/hello-service:${GIT_TAG}
 
@@ -49,7 +49,7 @@ jobs:
 
       - name: Pull this build tag
         run: |
-          echo "GIT_TAG=$(git describe --tags --abbrev=0)" >> $GITHUB_ENV
+          echo "GIT_TAG=$([ -z '${{ github.ref_name }}' ] && git describe --tags --abbrev=0 || git tag -l "${{ github.ref_name }}" | head -n 1)" >> $GITHUB_ENV
 
       # Checkout apps-manifest Repository
       - uses: actions/checkout@v2
