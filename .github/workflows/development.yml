@@ -83,19 +83,3 @@ jobs:
           targetBranch: main
           workDir: apps-manifest  # Ensures we're working within the apps-manifest repo
           token: ${{ secrets.PAT_TOKEN }}
-
-      # Check if changes were committed
-      - name: Check if Commit was Made
-        run: |
-          cd apps-manifest
-          git log --oneline -n 1
-          git diff --stat || echo "No changes detected"
-
-      # Manually add, commit, and push changes to apps-manifest (if not handled by the action)
-      - name: Commit and Push changes to apps-manifest
-        run: |
-          git config --global user.name "Pandhu Wibowo"
-          git config --global user.email "pandhu.wibowo@bvarta.com"
-          git add .
-          git commit -m "chore: update hello-service image tag to latest"
-          git push origin main
