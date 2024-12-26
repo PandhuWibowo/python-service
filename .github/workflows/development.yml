@@ -56,9 +56,9 @@ jobs:
       # Extract the Git Tag
       - name: Pull this build tag
         run: |
-          echo "GIT_TAG=$([ -z '${{ env.GITHUB_REF_NAME }}' ] && git describe --tags --abbrev=0 || echo '${{ env.GITHUB_REF_NAME }}' )" >> $GITHUB_ENV
+          echo "GIT_TAG=$([ -z '${{ github.ref_name }}' ] && git describe --tags --abbrev=0 || echo '${{ github.ref_name }}' )" >> $GITHUB_ENV
 
-      # Checkout apps-manifest Repository (No Token Required)
+      # Checkout apps-manifest Repository
       - uses: actions/checkout@v2
         with:
           repository: PandhuWibowo/apps-manifest
