@@ -42,10 +42,11 @@ jobs:
         run: |
           git checkout -b update-image-tag-${{ github.sha }}
 
-      # Step 6: Update Docker image tag in values-dev.yaml
+      # Step 7: Update Docker image tag in values-dev.yaml
       - name: Update Docker image tag in values-dev.yaml
         run: |
-          sed -i 's|image.tag: .*|image.tag: "${{ secrets.ACR_LOGIN_SERVER }}/analytics-service:latest"|g' values-dev.yaml
+          sed -i 's|image.tag: .*|image.tag: "${{ secrets.ACR_LOGIN_SERVER }}/analytics-service:latest"|g' analytics-service/values-dev.yaml
+
 
       # Step 7: Commit changes to the new branch
       - name: Commit changes to the new branch
