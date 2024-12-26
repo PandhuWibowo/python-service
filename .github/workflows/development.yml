@@ -88,15 +88,6 @@ jobs:
           targetBranch: main
           workDir: apps-manifest  # Ensures we're working within the apps-manifest repo
           token: ${{ secrets.PAT_TOKEN }}
-          
-      # Add commit and push changes after updating values-dev.yaml
-      - name: Commit and Push changes to apps-manifest repo
-        run: |
-          git config --global user.name "github-actions"
-          git config --global user.email "github-actions@github.com"
-          git add ./apps-manifest/hello-service/values-dev.yaml
-          git commit -m "chore(deploy): Update hello-service image tag to ${{ env.GIT_TAG }}"
-          git push origin main
     
       # Helm Deployment to AKS
       - name: Helm Deployment
