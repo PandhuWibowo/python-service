@@ -17,7 +17,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Step 2: Log in to Azure Container Registry (ACR)
+      # Log in to Azure Container Registry (ACR) and build the Docker image
       - name: Log in to ACR
         uses: azure/docker-login@v1
         with:
@@ -25,13 +25,11 @@ jobs:
           username: ${{ secrets.ACR_USERNAME }}
           password: ${{ secrets.ACR_PASSWORD }}
 
-      # Step 3: Build and Push Docker Image
       - name: Build and Push Docker Image
         run: |
           docker build -t ${{ secrets.ACR_LOGIN_SERVER }}/analytics-service:${{ github.sha }} .
           docker push ${{ secrets.ACR_LOGIN_SERVER }}/analytics-service:${{ github.sha }}
 
-      # Step 4: Tag Image with Git Tag
       - name: Tag Image with Git Tag
         run: |
           GIT_TAG=$([ -z '${{ github.ref_name }}' ] && git describe --tags --abbrev=0 || echo '${{ github.ref_name }}')
@@ -44,13 +42,11 @@ jobs:
     name: Deploy Image (Dev) - Helm Update (apps-manifest)
     runs-on: ubuntu-latest
     steps:
-      # Checkout Main Repository
       - name: Checkout selected ref
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
 
-      # Extract the Git Tag
       - name: Pull this build tag
         run: |
           echo "GIT_TAG=$([ -z '${{ github.ref_name }}' ] && git describe --tags --abbrev=0 || echo '${{ github.ref_name }}' )" >> $GITHUB_ENV
@@ -62,7 +58,13 @@ jobs:
           path: apps-manifest
           fetch-depth: 1
 
-      # Log in to Azure (skip Azure CLI setup step as it's pre-installed)
+      # Set up Azure CLI
+      - name: Set up Azure CLI
+        uses: azure/setup-azure-cli@v1
+        with:
+          azcliversion: '2.x'
+
+      # Log in to Azure
       - name: Azure Login
         uses: azure/login@v1
         with:
@@ -77,7 +79,7 @@ jobs:
       - name: Update Image Version in Helm Chart (values-dev.yaml)
         uses: fjogeleit/yaml-update-action@v0.16.0
         with:
-          valueFile: analytics-service/values-dev.yaml
+          valueFile: apps-manifest/analytics-service/values-dev.yaml
           propertyPath: "image.tag"
           value: ${{ env.GIT_TAG }}
           repository: PandhuWibowo/apps-manifest
@@ -91,6 +93,7 @@ jobs:
       # Helm Deployment to AKS
       - name: Helm Deployment
         run: |
-          helm upgrade --install analytics-service ./analytics-service \
+          helm upgrade --install analytics-service ./apps-manifest/analytics-service \
             --namespace analytics \
-            --values analytics-service/values-dev.yaml
+            --values ./apps-manifest/analytics-service/values-dev.yaml
+
