@@ -27,14 +27,13 @@ jobs:
 
       - name: Build and Push Docker Image
         run: |
+          # Build and push the image with SHA tag
           docker build -t ${{ secrets.ACR_LOGIN_SERVER }}/hello-service:${{ github.sha }} .
           docker push ${{ secrets.ACR_LOGIN_SERVER }}/hello-service:${{ github.sha }}
-
-      - name: Tag Image with Git Tag
-        run: |
-          GIT_TAG=$([ -z '${{ github.ref_name }}' ] && git describe --tags --abbrev=0 || echo '${{ github.ref_name }}')
-          docker tag ${{ secrets.ACR_LOGIN_SERVER }}/hello-service:${{ github.sha }} ${{ secrets.ACR_LOGIN_SERVER }}/hello-service:${GIT_TAG}
-          docker push ${{ secrets.ACR_LOGIN_SERVER }}/hello-service:${GIT_TAG}
+          
+          # Tag and push the image with 'latest' tag
+          docker tag ${{ secrets.ACR_LOGIN_SERVER }}/hello-service:${{ github.sha }} ${{ secrets.ACR_LOGIN_SERVER }}/hello-service:latest
+          docker push ${{ secrets.ACR_LOGIN_SERVER }}/hello-service:latest
 
   # Step 2: Update Helm Chart and Deploy
   update-deployment-dev:
@@ -47,15 +46,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Pull this build tag
-        run: |
-          echo "GIT_TAG=$([ -z '${{ github.ref_name }}' ] && git describe --tags --abbrev=0 || echo '${{ github.ref_name }}' )" >> $GITHUB_ENV
-
       # Checkout apps-manifest Repository
       - uses: actions/checkout@v2
         with:
           repository: PandhuWibowo/apps-manifest
-          path: apps-manifest  # This will clone the apps-manifest repo into the apps-manifest folder
+          path: apps-manifest  # Clone the apps-manifest repo into the apps-manifest folder
           fetch-depth: 1
 
       # Set up Azure CLI (Alternative Method)
@@ -80,9 +75,9 @@ jobs:
         with:
           valueFile: ./hello-service/values-dev.yaml
           propertyPath: "image.tag"
-          value: ${{ env.GIT_TAG }}
+          value: "latest"  # Set the image tag to 'latest'
           repository: PandhuWibowo/apps-manifest
-          message: "chore(deploy): [Dev] Update analytics-service image version to (${{ env.GIT_TAG }})"
+          message: "chore(deploy): [Dev] Update hello-service image version to (latest)"
           createPR: false
           branch: main
           targetBranch: main
