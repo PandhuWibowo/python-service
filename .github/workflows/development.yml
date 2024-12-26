@@ -88,10 +88,3 @@ jobs:
           targetBranch: main
           workDir: apps-manifest  # Ensures we're working within the apps-manifest repo
           token: ${{ secrets.PAT_TOKEN }}
-
-      # Helm Deployment to AKS
-      - name: Helm Deployment
-        run: |
-          helm upgrade --install analytics-service ./apps-manifest/analytics-service \
-            --namespace analytics \
-            --values ./apps-manifest/analytics-service/values-dev.yaml  # Correct path to values-dev.yaml
