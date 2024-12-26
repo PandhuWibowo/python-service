@@ -94,6 +94,8 @@ jobs:
       # Manually add, commit, and push changes to apps-manifest (if not handled by the action)
       - name: Commit and Push changes to apps-manifest
         run: |
+          git config --global user.name "Pandhu Wibowo"
+          git config --global user.email "pandhu.wibowo@bvarta.com"
           git add .
           git commit -m "chore: update hello-service image tag to latest"
           git push origin main
