@@ -78,7 +78,7 @@ jobs:
           value: "latest"  # Set the image tag to 'latest'
           repository: PandhuWibowo/apps-manifest
           message: "chore(deploy): [Dev] Update hello-service image version to (latest)"
-          createPR: true
+          createPR: false
           branch: main
           targetBranch: main
           workDir: apps-manifest  # Ensures we're working within the apps-manifest repo
