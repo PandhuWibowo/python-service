@@ -87,3 +87,9 @@ jobs:
       - name: List files in the repository
         run: |
           ls -R ./apps-manifest
+
+      - name: Check git status
+        run: |
+          git status
+          git diff
+
