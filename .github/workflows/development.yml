@@ -75,10 +75,11 @@ jobs:
           branch: main
           targetBranch: main
           workDir: apps-manifest
+          token: ${{ secrets.PAT_TOKEN }}  # Use PAT for authentication
 
       # Optional: Trigger Helm Deployment
       - name: Helm Deployment
         run: |
           helm upgrade --install analytics-service ./analytics-service \
-            --namespace dev \
+            --namespace analytics \
             --values analytics-service/values-dev.yaml
