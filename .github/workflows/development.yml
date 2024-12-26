@@ -6,9 +6,6 @@ on:
       - main
   pull_request:
 
-env:
-  DOCKER_CONFIG: ${{ runner.temp }}/docker_login
-
 jobs:
   # Step 1: Build and Push Docker Image
   tag_and_push_image:
