@@ -75,7 +75,7 @@ jobs:
         with:
           valueFile: 'hello-service/values-dev.yaml'
           propertyPath: "image.tag"
-          value: "latest"  # Set the image tag to 'latest'
+          value: ${{ github.sha }}  # Set the image tag to 'latest'
           repository: PandhuWibowo/apps-manifest
           message: "chore(deploy): [Dev] Update hello-service image version to (latest)"
           createPR: false
