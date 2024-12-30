@@ -9,11 +9,18 @@ def get_root_message():
 def calculate_addition(num1: int, num2: int):
     return {"result": num1 + num2}
 
+def calculate_substraction(num1: int, num2: int):
+    return {"result": num1 - num2}
+
 # FastAPI routes
 @app.get("/")
 async def root():
     return get_root_message()
 
 @app.get("/addition/{num1}/{num2}")
+async def addition(num1: int, num2: int):
+    return calculate_addition(num1, num2)
+
+@app.get("/subtraction/{num1}/{num2}")
 async def addition(num1: int, num2: int):
     return calculate_addition(num1, num2)
